@@ -1,0 +1,25 @@
+---
+name: Test workflow
+
+on:
+  workflow_call:
+    inputs:
+      PBS:
+        description: "Pre-build script path"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  run-gha:
+    name: Run my test action
+    runs-on: ubuntu-latest
+    steps:
+      - name: test-if
+        if: ${{ inputs.PBS }}
+        run: |
+          echo "The input ${{ inputs.PBS }} was true"
+      - name: test-if-not
+        if: ${{ !(inputs.PBS) }}
+        run: |
+          echo "The inverse of input ${{ inputs.PBS }} was true"
