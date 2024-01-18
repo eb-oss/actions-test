@@ -15,11 +15,12 @@ jobs:
     name: Run my test action
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: test-if
-        if: ${{ inputs.PBS }}
+        if: ${{ hashFiles(inputs.PBS) }}
         run: |
           echo "The input ${{ inputs.PBS }} was true"
       - name: test-if-not
-        if: ${{ !(inputs.PBS) }}
+        if: ${{ !hashFiles(inputs.PBS) }}
         run: |
           echo "The inverse of input ${{ inputs.PBS }} was true"

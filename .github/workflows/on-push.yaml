@@ -14,4 +14,4 @@ jobs:
   run-workflow-filled:
     uses: ./.github/workflows/wf.yaml
     with:
-      PBS: "path/to/script.sh"
+      PBS: "myscript.sh"
