@@ -5,13 +5,7 @@ on:
   push
 
 jobs:
-  run-workflow-empty:
-    uses: ./.github/workflows/wf.yaml
-  run-workflow-blank:
-    uses: ./.github/workflows/wf.yaml
-    with:
-      PBS: ""
   run-workflow-filled:
     uses: ./.github/workflows/wf.yaml
     with:
-      PBS: "myscript.sh"
+      PBS: "{python38: [test], python39: [test,lint]}"

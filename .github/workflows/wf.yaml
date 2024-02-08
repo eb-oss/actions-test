@@ -11,16 +11,28 @@ on:
         type: string
 
 jobs:
-  run-gha:
-    name: Run my test action
+  process-matrix:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ${{ fromJSON(inputs.PBS).* }}
+
     steps:
-      - uses: actions/checkout@v3
-      - name: test-if
-        if: ${{ hashFiles(inputs.PBS) }}
+      - uses: actions/checkout@v4
+      - name: Echo stuff
         run: |
-          echo "The input ${{ inputs.PBS }} was true"
-      - name: test-if-not
-        if: ${{ !hashFiles(inputs.PBS) }}
-        run: |
-          echo "The inverse of input ${{ inputs.PBS }} was true"
+          echo ${{ matrix.version }}
+          echo ${{ matrix.version.* }}
+  # run-gha:
+  #   name: Run my test action
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: test-if
+  #       if: ${{ hashFiles(inputs.PBS) }}
+  #       run: |
+  #         echo "The input ${{ inputs.PBS }} was true"
+  #     - name: test-if-not
+  #       if: ${{ !hashFiles(inputs.PBS) }}
+  #       run: |
+  #         echo "The inverse of input ${{ inputs.PBS }} was true"
