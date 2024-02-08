@@ -5,7 +5,11 @@ on:
   workflow_call:
     inputs:
       PBS:
-        description: "Pre-build script path"
+        description: >
+          List of envs to run. These MUST be passed as a string representing
+          a list of strings, e.g.:
+
+          '["lint", "build"]'
         required: false
         default: ""
         type: string
@@ -15,14 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ${{ fromJSON(inputs.PBS).* }}
+        version: ${{ fromJSON(inputs.PBS) }}
 
     steps:
       - uses: actions/checkout@v4
       - name: Echo stuff
         run: |
           echo "${{ matrix.version }}"
-          echo "${{ matrix.version.* }}"
   # run-gha:
   #   name: Run my test action
   #   runs-on: ubuntu-latest
