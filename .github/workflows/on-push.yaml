@@ -8,4 +8,7 @@ jobs:
   run-workflow-filled:
     uses: ./.github/workflows/wf.yaml
     with:
-      PBS: "{python38: [test], python39: [test,lint]}"
+      PBS:
+        - code
+        - build
+        - lint

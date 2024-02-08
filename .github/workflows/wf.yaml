@@ -15,14 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ${{ fromJSON(inputs.PBS).* }}
+        version: ${{ inputs.PBS.* }}
 
     steps:
       - uses: actions/checkout@v4
       - name: Echo stuff
         run: |
           echo ${{ matrix.version }}
-          echo ${{ matrix.version.* }}
+          echo ${{ PBS.(matrix.version).* }}
   # run-gha:
   #   name: Run my test action
   #   runs-on: ubuntu-latest
