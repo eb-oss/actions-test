@@ -32,7 +32,6 @@ jobs:
           else
             echo "dev_version=false" >> $GITHUB_OUTPUT
           fi
-          return 1
 
       - name: get target version
         id: get-target-version-step
@@ -45,6 +44,6 @@ jobs:
           # check if version format is matched to SemVer
           VER_REGEX='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
           if [[ ! $(cat VERSION | tr -d '\n' | sed s/-dev//) =~ $VER_REGEX ]]; then
-            return 1
+            exit 1
           fi
-          return 0
+          exit 0
