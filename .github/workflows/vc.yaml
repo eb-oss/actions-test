@@ -15,7 +15,6 @@ on:
 
 jobs:
   version-check:
-    if: (github.repository_owner == 'onosproject')
     runs-on: ubuntu-latest
     outputs:
       dev_version: ${{ steps.dev-version-check-step.outputs.dev_version }}
