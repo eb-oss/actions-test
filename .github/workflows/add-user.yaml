@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2025 The Linux Foundation
+# SPDX-License-Identifier: Apache-2.0
+name: Add User to Organization
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'GitHub username to add to the organization'
+        required: true
+        type: string
+
+jobs:
+  add-user:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if actor is member of org-managers team
+        id: check-membership
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          ORG: ${{ github.repository_owner }}
+        run: |
+          # Check if the actor is a member of the org-managers team
+          echo "Checking if ${ACTOR} is a member of org-managers team..."
+          
+          # Get the team slug for org-managers
+          TEAM_SLUG="org-managers"
+          
+          # Check team membership using GitHub CLI
+          if gh api "/orgs/${ORG}/teams/${TEAM_SLUG}/memberships/${ACTOR}" --silent 2>/dev/null; then
+            echo "✓ ${ACTOR} is a member of ${TEAM_SLUG}"
+            echo "is_member=true" >> $GITHUB_OUTPUT
+          else
+            echo "✗ ${ACTOR} is NOT a member of ${TEAM_SLUG}"
+            echo "is_member=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Add user to organization
+        if: steps.check-membership.outputs.is_member == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          USERNAME: ${{ inputs.username }}
+          ORG: ${{ github.repository_owner }}
+        run: |
+          echo "Adding user ${USERNAME} to organization ${ORG}..."
+          
+          # Invite the user to the organization using GitHub CLI
+          # This creates an invitation for the user to join the organization
+          gh api \
+            --method PUT \
+            "/orgs/${ORG}/memberships/${USERNAME}" \
+            -f role='member' \
+            || {
+              echo "Failed to add user ${USERNAME} to organization ${ORG}"
+              exit 1
+            }
+          
+          echo "✓ Successfully sent invitation to ${USERNAME} to join ${ORG}"
+          echo "The user will need to accept the invitation to complete the process."
