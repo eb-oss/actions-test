@@ -13,6 +13,8 @@ on:
 jobs:
   add-user:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Check if actor is member of org-managers team
         id: check-membership
