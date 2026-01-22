@@ -27,12 +27,17 @@ jobs:
           # Get the team slug for org-managers
           TEAM_SLUG="org-managers"
           
-          # Check team membership using GitHub CLI
-          if gh api "/orgs/${ORG}/teams/${TEAM_SLUG}/memberships/${ACTOR}" --silent 2>/dev/null; then
+          # Check team membership using GitHub CLI (members endpoint for visibility support)
+          HTTP_CODE=$(gh api \
+            "/orgs/${ORG}/teams/${TEAM_SLUG}/members/${ACTOR}" \
+            --silent \
+            --include 2>&1 | head -n1 | cut -d' ' -f2 || echo "000")
+          
+          if [ "$HTTP_CODE" = "204" ]; then
             echo "✓ ${ACTOR} is a member of ${TEAM_SLUG}"
             echo "is_member=true" >> $GITHUB_OUTPUT
           else
-            echo "✗ ${ACTOR} is NOT a member of ${TEAM_SLUG}"
+            echo "✗ ${ACTOR} is NOT a member of ${TEAM_SLUG} (HTTP ${HTTP_CODE})"
             echo "is_member=false" >> $GITHUB_OUTPUT
             exit 1
           fi
@@ -44,18 +49,26 @@ jobs:
           USERNAME: ${{ inputs.username }}
           ORG: ${{ github.repository_owner }}
         run: |
+          # Validate username format (GitHub usernames: alphanumeric and hyphens, 1-39 chars)
+          if ! echo "${USERNAME}" | grep -Eq '^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$'; then
+            echo "✗ Invalid username format: ${USERNAME}"
+            echo "GitHub usernames must be 1-39 characters, alphanumeric with hyphens, not starting or ending with hyphen"
+            exit 1
+          fi
+          
           echo "Adding user ${USERNAME} to organization ${ORG}..."
           
           # Invite the user to the organization using GitHub CLI
           # This creates an invitation for the user to join the organization
-          gh api \
+          RESPONSE=$(gh api \
             --method PUT \
             "/orgs/${ORG}/memberships/${USERNAME}" \
             -f role='member' \
-            || {
-              echo "Failed to add user ${USERNAME} to organization ${ORG}"
-              exit 1
-            }
+            2>&1) || {
+            echo "✗ Failed to add user ${USERNAME} to organization ${ORG}"
+            echo "API Response: ${RESPONSE}"
+            exit 1
+          }
           
           echo "✓ Successfully sent invitation to ${USERNAME} to join ${ORG}"
           echo "The user will need to accept the invitation to complete the process."
