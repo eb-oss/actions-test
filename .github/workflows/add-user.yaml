@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2025 The Linux Foundation
+# SPDX-License-Identifier: Apache-2.0
+name: Add User to Organization
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'GitHub username to add to the organization'
+        required: true
+        type: string
+
+jobs:
+  add-user:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check if actor is member of org-managers team
+        id: check-membership
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          ORG: ${{ github.repository_owner }}
+        run: |
+          # Check if the actor is a member of the org-managers team
+          echo "Checking if ${ACTOR} is a member of org-managers team..."
+          
+          # Get the team slug for org-managers
+          TEAM_SLUG="org-managers"
+          
+          # Check team membership using GitHub CLI (members endpoint for visibility support)
+          if gh api "/orgs/${ORG}/teams/${TEAM_SLUG}/members/${ACTOR}" --silent 2>/dev/null; then
+            echo "✓ ${ACTOR} is a member of ${TEAM_SLUG}"
+            echo "is_member=true" >> $GITHUB_OUTPUT
+          else
+            echo "✗ ${ACTOR} is NOT a member of ${TEAM_SLUG}"
+            echo "is_member=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Add user to organization
+        if: steps.check-membership.outputs.is_member == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          USERNAME: ${{ inputs.username }}
+          ORG: ${{ github.repository_owner }}
+        run: |
+          # Validate username format (GitHub usernames: alphanumeric and hyphens, 1-39 chars)
+          if ! echo "${USERNAME}" | grep -Eq '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$'; then
+            echo "✗ Invalid username format: ${USERNAME}"
+            echo "GitHub usernames must be 1-39 characters, alphanumeric with hyphens, not starting or ending with hyphen"
+            exit 1
+          fi
+          
+          # Additional length check
+          if [ ${#USERNAME} -gt 39 ]; then
+            echo "✗ Username too long: ${USERNAME} (max 39 characters)"
+            exit 1
+          fi
+          
+          echo "Adding user ${USERNAME} to organization ${ORG}..."
+          
+          # Invite the user to the organization using GitHub CLI
+          # This creates an invitation for the user to join the organization
+          if gh api \
+            --method PUT \
+            "/orgs/${ORG}/memberships/${USERNAME}" \
+            -f role='member' \
+            2>&1 | grep -q "HTTP"; then
+            echo "✗ Failed to add user ${USERNAME} to organization ${ORG}"
+            echo "Please check that the username exists and you have proper permissions"
+            exit 1
+          fi
+          
+          echo "✓ Successfully sent invitation to ${USERNAME} to join ${ORG}"
+          echo "The user will need to accept the invitation to complete the process."
